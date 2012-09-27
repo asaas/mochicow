@@ -26,6 +26,7 @@
 	path_info = undefined :: undefined | cowboy_dispatcher:tokens(),
 	qs = undefined :: binary(),
 	qs_vals = undefined :: undefined | list({binary(), binary() | true}),
+	fragment = undefined :: binary(),
 	bindings = undefined :: undefined | cowboy_dispatcher:bindings(),
 	headers = [] :: cowboy_http:headers(),
 	p_headers = [] :: [any()], %% @todo Improve those specs.
@@ -40,8 +41,7 @@
 	%% Response.
 	resp_state = waiting :: locked | waiting | chunks | done,
 	resp_headers = [] :: cowboy_http:headers(),
-	resp_body = <<>> :: iodata()
-		| {non_neg_integer(), fun(() -> {sent, non_neg_integer()})},
+	resp_body = <<>> :: iodata() | {non_neg_integer(), cowboy_req:resp_body_fun()},
 
 	%% Functions.
 	onresponse = undefined :: undefined | cowboy_protocol:onresponse_fun(),
@@ -52,14 +52,14 @@ upgrade(_ListenerPid, _Handler, Opts, Req) ->
     {loop, HttpLoop} = proplists:lookup(loop, Opts),
     #http_req{socket=Socket,
               transport=Transport,
-              buffer=Buffer,
               method=Method,
               version=Version,
+              host=Host,
+              port=Port,
               path=Path,
               qs=QS,
               headers=Headers,
-              host=Host,
-              port=Port} = Req,
+              buffer=Buffer} = Req,
 
     MochiSocket = mochiweb_socket(Transport, Socket),
     DefaultPort = default_port(Transport:name()),
