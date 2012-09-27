@@ -28,13 +28,13 @@ Ex:
 
 
     start() ->
-        application:start(cowboy),
-        cowboy:start_listener(http, 100,
-                              cowboy_tcp_transport, [{port, 8000}],
+        application:start(ranch),
+        ranch:start_listener(http, 100,
+                              ranch_tcp, [{port, 8000}],
                               mochicow_protocol, [{loop, ?LOOP}]).
 
     stop() ->
-        application:stop(cowboy).
+        application:stop(ranch).
 
 
     loop(Req) ->
@@ -63,15 +63,15 @@ a mochiweb loop.
                 {'_', [{[<<"mochi">>,'_'], mochi_handler, [{loop, ?LOOP}]},
                        {'_', cowboy_handler, []}]}
         ],
-        application:start(cowboy),
+        application:start(ranch),
         application:start(cowboy_revproxy),
 
-        cowboy:start_listener(http, 100,
-                              cowboy_tcp_transport, [{port, 8080}],
-                              cowboy_http_protocol, [{dispatch, Dispatch}]).
+        ranch:start_listener(http, 100,
+                              ranch_tcp, [{port, 8080}],
+                              ranch_protocol, [{dispatch, Dispatch}]).
 
     stop() ->
-        application:stop(cowboy).
+        application:stop(ranch).
 
 
 ### The mochiweb handler:
