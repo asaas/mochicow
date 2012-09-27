@@ -26,10 +26,10 @@
 -define(LOOP, {?MODULE, loop}).
 
 start(Port) ->
-    application:start(cowboy),
+    application:start(ranch),
 
-    cowboy:start_listener(http, 100,
-                          cowboy_tcp_transport, [{port, Port}],
+    ranch:start_listener(http, 100,
+                          ranch_tcp, [{port, Port}],
                           mochicow_protocol, [{loop, ?LOOP}]).
 
 loop(Req) ->

@@ -6,7 +6,6 @@
 
 
 -module(mochicow_protocol).
--behaviour(cowboy_protocol).
 
 -export([start_link/4]).
 -export([init/4]).
@@ -15,7 +14,6 @@
 -export([after_response/2, reentry/1]).
 -export([new_request/3, call_body/2]).
 
--include_lib("cowboy/include/http.hrl").
 -include("mochicow.hrl").
 
 -define(REQUEST_RECV_TIMEOUT, 300000).   %% timeout waiting for request line
@@ -37,7 +35,7 @@ start_link(ListenerPid, Socket, Transport, Opts) ->
 -spec init(pid(), inet:socket(), module(), any()) -> ok | none().
 init(ListenerPid, Socket, Transport, Opts) ->
     {loop, HttpLoop} = proplists:lookup(loop, Opts),
-    ok = cowboy:accept_ack(ListenerPid),
+    ok = ranch:accept_ack(ListenerPid),
     loop(#hstate{socket = Socket,
                  transport = Transport,
                  loop = HttpLoop}).
@@ -135,9 +133,9 @@ reentry(Body) ->
 after_response(Body, Req) ->
     {Transport, Socket} = case Req:get(socket) of
         {ssl, S} ->
-            {cowboy_ssl_transport, S};
+            {ranch_ssl, S};
         S ->
-            {cowboy_tcp_transport, S}
+            {ranch_tcp, S}
     end,
 
     case Req:should_close() of
@@ -155,7 +153,7 @@ after_response(Body, Req) ->
 
 mochiweb_socket(#hstate{transport=Transport, socket=Socket}) ->
     case Transport of
-        cowboy_transport_ssl ->
+        ranch_ssl ->
             {ssl, Socket};
         _ ->
             Socket
