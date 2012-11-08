@@ -8,58 +8,22 @@
 
 -export([upgrade/4]).
 
--record(http_req, {
-	%% Transport.
-	socket = undefined :: undefined | inet:socket(),
-	transport = undefined :: undefined | module(),
-	connection = keepalive :: keepalive | close,
-
-	%% Request.
-	pid = undefined :: pid(),
-	method = <<"GET">> :: binary(),
-	version = {1, 1} :: cowboy_http:version(),
-	peer = undefined :: undefined | {inet:ip_address(), inet:port_number()},
-	host = undefined :: undefined | binary(),
-	host_info = undefined :: undefined | cowboy_dispatcher:tokens(),
-	port = undefined :: undefined | inet:port_number(),
-	path = undefined :: binary(),
-	path_info = undefined :: undefined | cowboy_dispatcher:tokens(),
-	qs = undefined :: binary(),
-	qs_vals = undefined :: undefined | list({binary(), binary() | true}),
-	fragment = undefined :: binary(),
-	bindings = undefined :: undefined | cowboy_dispatcher:bindings(),
-	headers = [] :: cowboy_http:headers(),
-	p_headers = [] :: [any()], %% @todo Improve those specs.
-	cookies = undefined :: undefined | [{binary(), binary()}],
-	meta = [] :: [{atom(), any()}],
-
-	%% Request body.
-	body_state = waiting :: waiting | done | {stream, fun(), any(), fun()},
-	multipart = undefined :: undefined | {non_neg_integer(), fun()},
-	buffer = <<>> :: binary(),
-
-	%% Response.
-	resp_state = waiting :: locked | waiting | chunks | done,
-	resp_headers = [] :: cowboy_http:headers(),
-	resp_body = <<>> :: iodata() | {non_neg_integer(), cowboy_req:resp_body_fun()},
-
-	%% Functions.
-	onresponse = undefined :: undefined | cowboy_protocol:onresponse_fun(),
-	urldecode :: {fun((binary(), T) -> binary()), T}
-}).
 
 upgrade(_ListenerPid, _Handler, Opts, Req) ->
     {loop, HttpLoop} = proplists:lookup(loop, Opts),
-    #http_req{socket=Socket,
-              transport=Transport,
-              method=Method,
-              version=Version,
-              host=Host,
-              port=Port,
-              path=Path,
-              qs=QS,
-              headers=Headers,
-              buffer=Buffer} = Req,
+
+    [Socket,
+     Transport,
+     Method,
+     Version,
+     Host,
+     Port,
+     Path,
+     QS,
+     Headers,
+     Buffer] = cowboy_req:get([socket, transport, method, version,
+                              host,port, path, qs, headers, buffer],
+                              Req),
 
     MochiSocket = mochiweb_socket(Transport, Socket),
     DefaultPort = default_port(Transport:name()),
@@ -121,17 +85,17 @@ call_body(Body, Req) ->
     Body(Req).
 
 after_response(Req, MochiReq) ->
-    Req2 = Req#http_req{resp_state = done,
-                        body_state = done,
-                        buffer = MochiReq:get(buffer) },
+    Req2 = cowboy_req:set([{resp_state, done}, {body_state, done},
+                           {buffer, MochiReq:get(buffer)}], Req),
 
     case MochiReq:should_close() of
         true ->
-            {ok, Req2#http_req{connection=close}};
+
+            {ok, cowboy_req:set([{connection, close}], Req2)};
         _ ->
             MochiReq:cleanup(),
             erlang:garbage_collect(),
-            {ok, Req2#http_req{connection=keepalive}}
+            {ok, cowboy_req:set([{connection, keepalive}], Req2)}
     end.
 
 -spec default_port(atom()) -> 80 | 443.
