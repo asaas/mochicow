@@ -3,7 +3,7 @@
 
 %% @doc MochiWeb HTTP Request abstraction.
 
--compile({parse_transform, pmod_transform}).
+-compile({parse_transform, pmod_pt}).
 -module(mochicow_request, [Socket, Method, RawPath, Version, Headers,
                            InitialBuffer]).
 -author('bob@mochimedia.com').
