@@ -58,8 +58,12 @@ upgrade(Req, _Env, _Handler, Opts) ->
         _ ->
             << Path1/binary, "?", QS/binary >>
     end,
+    AtomicMethod = if is_binary(Method) ->
+            list_to_atom(binary_to_list(Method));
+        _ -> Method
+    end,
     MochiReq = mochicow_request:new(MochiSocket,
-                                    Method,
+                                    AtomicMethod,
                                     binary_to_list(RawPath),
                                     Version,
                                     MochiHeaders,
