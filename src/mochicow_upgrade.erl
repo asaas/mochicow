@@ -60,7 +60,7 @@ upgrade(Req, _Env, _Handler, Opts) ->
     end,
     AtomicMethod = if is_binary(Method) ->
             list_to_atom(binary_to_list(Method));
-        _ -> Method
+        true -> Method
     end,
     MochiReq = mochicow_request:new(MochiSocket,
                                     AtomicMethod,
