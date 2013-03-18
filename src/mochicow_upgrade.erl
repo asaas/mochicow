@@ -9,7 +9,7 @@
 -export([upgrade/4]).
 
 
-upgrade(_ListenerPid, _Handler, Opts, Req) ->
+upgrade(Req, _Env, _Handler, Opts) ->
     {loop, HttpLoop} = proplists:lookup(loop, Opts),
 
     [Socket,
@@ -90,12 +90,11 @@ after_response(Req, MochiReq) ->
 
     case MochiReq:should_close() of
         true ->
-
-            {ok, cowboy_req:set([{connection, close}], Req2)};
+            {ok, cowboy_req:set([{connection, close}], Req2), [{result, ok}]};
         _ ->
             MochiReq:cleanup(),
             erlang:garbage_collect(),
-            {ok, cowboy_req:set([{connection, keepalive}], Req2)}
+            {ok, cowboy_req:set([{connection, keepalive}], Req2), [{result, ok}]}
     end.
 
 -spec default_port(atom()) -> 80 | 443.
