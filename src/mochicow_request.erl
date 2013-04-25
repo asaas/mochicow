@@ -676,7 +676,10 @@ maybe_serve_file(File, ExtraHeaders) ->
                 _ ->
                     case file:open(File, [raw, binary]) of
                         {ok, IoDevice} ->
-                            ContentType = mochiweb_util:guess_mime(File),
+                            ContentType = case mimetypes:path_to_mimes(File) of
+                                [CT|_] -> binary_to_list(CT);
+                                [] -> "application/octet-stream"
+                            end,
                             Res = ok({ContentType,
                                       [{"last-modified", LastModified}
                                        | ExtraHeaders],
